@@ -1,0 +1,289 @@
+\documentclass[12pt]{article}
+
+\usepackage[utf8]{inputenc}
+\usepackage{geometry}
+\usepackage{graphicx}
+\usepackage{amsmath}
+\usepackage{listings}
+\usepackage{xcolor}
+\usepackage{indentfirst}
+
+\geometry{a4paper, margin=2.5cm}
+
+\title{Telemetry-Based Launch Decision System}
+\author{Pedro César Fernandes de Brito}
+\date{2026}
+
+\lstdefinestyle{pythonstyle}{
+    language=Python,
+    basicstyle=\ttfamily\small,
+    keywordstyle=\color{blue},
+    commentstyle=\color{gray},
+    stringstyle=\color{teal},
+    breaklines=true,
+    frame=single
+}
+
+\begin{document}
+
+\maketitle
+
+\tableofcontents
+\newpage
+
+% =========================
+\section{Objective}
+
+The objective of this project is to develop a computational system capable of simulating decision-making on a spacecraft, determining whether takeoff should be authorized or aborted based on the analysis of telemetry parameters.
+
+The system considers variables such as internal and external temperature, structural integrity, energy level, tank pressure, and the status of critical modules, using predefined rules to ensure that all safety criteria are met.
+
+In addition, the project seeks to integrate concepts of energy analysis and decision support through artificial intelligence, providing a more complete and realistic approach to risk assessment in complex systems.
+
+% =========================
+\section{Telemetry Organization}
+
+The spacecraft's telemetry was structured as a set of variables that represent the state of the main systems required for takeoff. This data is simulated in the system using a Python dictionary, allowing for easy access and manipulation.
+
+The parameters considered are:
+
+\begin{itemize}
+    \item Internal temperature (°C): represents the internal conditions of the spacecraft, which must remain within a safe range for system operation.
+    \item External temperature (°C): directly influences system performance and launch conditions.
+    \item Structural integrity (0 or 1): indicates whether the spacecraft structure is intact (1) or has defects (0).
+    \item Energy level: represents the payload available for takeoff.
+    \item Main tank pressure: related to the main fuel of the spacecraft.
+    \item Auxiliary tank pressure: support system for the main tank.
+    \item Status of critical modules (0 or 1): indicates whether essential systems are operational.
+\end{itemize}
+
+The data structure in the system is represented as follows:
+
+\begin{lstlisting}[style=pythonstyle]
+data = {
+    "internal_temp": 22.5,
+    "external_temp": 30.0,
+    "integrity": 1,
+    "energy": 75,
+    "main_pressure": 80,
+    "auxiliary_pressure": 70,
+    "critical_modules": 1
+}
+\end{lstlisting}
+
+This organization allows the system to quickly evaluate each parameter and make decisions based on predefined rules.
+
+% =========================
+\section{Algorithm}
+
+The algorithm was built based on safety rules. If any parameter is outside the acceptable range, the takeoff is aborted.
+
+\begin{verbatim}
+START
+
+READ spacecraft data:
+    internal temperature
+    external temperature
+    structural integrity (0 or 1)
+    energy level (%)
+    main tank pressure
+    auxiliary tank pressure
+    status of critical modules (0 or 1)
+
+IF internal temperature < 15 OR > 25
+    ABORT
+
+IF external temperature < 4 OR > 35
+    ABORT
+
+IF structural integrity == 0
+    ABORT
+
+IF energy level < 60
+    ABORT
+
+IF main tank pressure < 30 OR > 100
+    ABORT
+
+IF auxiliary tank pressure < 30 OR > 100
+    ABORT
+
+IF critical modules == 0
+    ABORT
+
+IF no error condition is found
+    DISPLAY "READY TO TAKE OFF"
+ELSE
+    DISPLAY "TAKEOFF ABORTED"
+
+END
+\end{verbatim}
+
+\newpage
+
+% =========================
+\section{Python Implementation}
+
+\begin{lstlisting}[style=pythonstyle]
+import random
+
+def gerar_dados():
+    return {
+        "temp_interna": round(random.uniform(0, 40), 1),
+        "temp_externa": round(random.uniform(-10, 50), 1),
+        "integridade": random.choice([0, 1]),
+        "energia": round(random.uniform(0, 100), 1),
+        "pressao_principal": round(random.uniform(0, 120), 1),
+        "pressao_auxiliar": round(random.uniform(0, 120), 1),
+        "modulos_criticos": random.choice([0, 1])
+    }
+
+def avaliar_lancamento(dados):
+    motivos = []
+
+    if not (15 <= dados["temp_interna"] <= 25):
+        motivos.append("Temperatura interna fora da faixa")
+
+    if not (4 <= dados["temp_externa"] <= 35):
+        motivos.append("Temperatura externa fora da faixa")
+
+    if dados["integridade"] == 0:
+        motivos.append("Falha estrutural")
+
+    if dados["energia"] < 60:
+        motivos.append("Energia insuficiente")
+
+    if not (30 <= dados["pressao_principal"] <= 100):
+        motivos.append("Pressão do tanque principal fora da faixa")
+
+    if not (30 <= dados["pressao_auxiliar"] <= 100):
+        motivos.append("Pressão do tanque auxiliar fora da faixa")
+
+    if dados["modulos_criticos"] == 0:
+        motivos.append("Falha nos módulos críticos")
+
+    if len(motivos) == 0:
+        return "PRONTO PARA DECOLAR", ["Todos os parâmetros OK"]
+    else:
+        return "DECOLAGEM ABORTADA", motivos
+
+def calcular_autonomia(energia_percentual):
+    capacidade_total = 1000
+    consumo_decolagem = 300
+    perdas = 50
+
+    energia_disponivel = capacidade_total * (energia_percentual / 100)
+    autonomia = energia_disponivel - consumo_decolagem - perdas
+
+    return autonomia
+
+dados = gerar_dados()
+resultado, motivos = avaliar_lancamento(dados)
+autonomia = calcular_autonomia(dados["energia"])
+
+print("=== DADOS DA NAVE ===")
+for chave, valor in dados.items():
+    print(f"{chave}: {valor}")
+
+print("\n=== RESULTADO ===")
+print(resultado)
+
+for motivo in motivos:
+    print("-", motivo)
+
+print("\n=== ANÁLISE ENERGÉTICA ===")
+print(f"Autonomia restante: {autonomia:.2f} kWh")
+
+if autonomia < 0:
+    print("Energia insuficiente para decolagem!")
+else:
+    print("Energia suficiente para decolagem.")
+\end{lstlisting}
+
+% =========================
+\section{Energy Analysis}
+
+Energy analysis aims to estimate whether the spacecraft has sufficient energy to perform a safe takeoff.
+
+For this purpose, the following parameters were considered:
+
+\begin{itemize}
+    \item Total energy capacity (kWh)
+    \item Current load
+    \item Estimated consumption during takeoff
+    \item Energy losses
+\end{itemize}
+
+Available energy is calculated using the formula:
+
+\[
+Energy = Capacity \times \frac{Charge}{100}
+\]
+
+The spacecraft's initial autonomy is then determined by:
+
+\[
+Autonomy = Energy - Consumption - Losses
+\]
+
+If the final autonomy is positive, the spacecraft has enough energy for takeoff. Otherwise, the mission must be aborted due to insufficient energy.
+
+Energy analysis complements the decision system, ensuring that not only are the physical parameters within normal limits, but also that there is sufficient operational capacity to execute the mission.
+
+% =========================
+\section{AI-Assisted Analysis}
+
+To complement the decision system, an artificial intelligence tool was used to analyze telemetry data and provide an additional assessment of the spacecraft's status.
+
+The AI was used to classify the data as safe or unsafe, identify potential anomalies, and suggest risks associated with the observed parameters.
+
+Based on the parameters provided, the system can be classified as:
+
+\begin{itemize}
+    \item Safe: when all parameters are within established ranges
+    \item Unsafe: when there are deviations that compromise the operation
+\end{itemize}
+
+The analysis identified possible anomalies such as:
+
+\begin{itemize}
+    \item Internal or external temperature outside the ideal range
+    \item Failure in structural integrity
+    \item Energy level below the minimum required
+    \item Inadequate pressure in the tanks
+    \item Failures in critical modules
+\end{itemize}
+
+The main consequences associated with anomalies include:
+
+\begin{itemize}
+    \item Failure during takeoff
+    \item Possible explosion due to inadequate pressure
+    \item Loss of control of the spacecraft
+    \item Mission interruption
+    \item Severe structural damage
+\end{itemize}
+
+% =========================
+\section{Critical Reflection}
+
+The use of automated systems for decision-making in space operations raises important ethical and responsibility issues. In the context of this project, the decision to allow or abort a launch is based on predefined parameters, demonstrating how algorithms can directly influence high-risk situations. In real-world scenarios, errors in these systems can result in human losses, environmental damage, and significant financial losses, requiring extreme rigor in data validation and reliability.
+
+In addition, space exploration has a significant social impact. The development of space technologies contributes to advances in various areas, such as communication, navigation, and scientific research. However, it also raises questions about the distribution of resources, since it involves high investments that could be directed to other societal needs. Therefore, it is important to balance technological innovation with social responsibility.
+
+Another key point is technological sustainability. The increase in space activities has generated concerns about the accumulation of space debris, the consumption of natural resources, and the environmental impacts of launches. More efficient and reusable technologies, such as reusable rockets, represent important advances in this regard, reducing costs and environmental impacts.
+
+Finally, this project demonstrates, albeit in a simplified way, the importance of secure, well-structured, and ethically responsible systems in decision-making. The integration of technology, responsibility, and sustainability is essential to ensure that the advancement of space exploration occurs safely and beneficially for society as a whole.
+
+% =========================
+\section{Conclusion}
+
+The development of the system made it possible to understand, in practice, how telemetry data can be used to support critical decisions in high-risk environments, such as a space launch.
+
+The implementation of the algorithm demonstrated the importance of establishing safe ranges for each parameter, ensuring that the spacecraft operates within appropriate conditions. Energy analysis complemented this approach, highlighting that not only physical aspects, but also the availability of resources, are essential for mission success.
+
+In addition, the use of artificial intelligence-assisted analysis reinforced the relevance of multiple layers of verification, contributing to the identification of possible anomalies and risks.
+
+In short, the developed system proved capable of simulating critical decisions in a structured way, highlighting the importance of integrated analysis of multiple parameters to ensure operational safety.
+
+\end{document}
